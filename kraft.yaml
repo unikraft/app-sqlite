@@ -1,7 +1,7 @@
 specification: '0.4'
 
 unikraft:
-  version: '0.4'
+  version: '0.5'
   kconfig:
     # Enable 9pfs filesystem support
     - CONFIG_LIBUK9P=y
@@ -29,12 +29,12 @@ run:
       source: minrootfs.tgz
 
 libraries:
-  pthread-embedded: '0.4'
+  pthread-embedded: '0.5'
   newlib:
-    version: '0.4'
+    version: '0.5'
     kconfig:
       - CONFIG_LIBNEWLIBC=y
   sqlite:
-    version: '0.4'
+    version: '0.5'
     kconfig:
       - CONFIG_LIBSQLITE_MAIN_FUNCTION=y
