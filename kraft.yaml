@@ -1,9 +1,8 @@
-specification: '0.4'
-
+specification: '0.5'
+name: sqlite
 unikraft:
   version: '0.5'
   kconfig:
-    # Enable 9pfs filesystem support
     - CONFIG_LIBUK9P=y
     - CONFIG_LIB9PFS=y
     - CONFIG_LIBDEVFS=y
@@ -12,22 +11,11 @@ unikraft:
     - CONFIG_LIBVFSCORE_ROOTFS_9PFS=y
     - CONFIG_LIBUKLIBPARAM=y
     - CONFIG_LIBVFSCORE_ROOTDEV="fs0"
-    # Select other options needed by sqlite
     - CONFIG_LIBUKMMAP=y
     - CONFIG_LIBPOSIX_SYSINFO=y
-
-architectures:
-  x86_64: true
-
-platforms:
-  kvm: true
-
-run:
-  volumes:
-    fs0:
-      driver: 9pfs
-      source: minrootfs.tgz
-
+targets:
+  - architecture: x86_64
+    platform: kvm
 libraries:
   pthread-embedded: '0.5'
   newlib:
@@ -38,3 +26,7 @@ libraries:
     version: '0.5'
     kconfig:
       - CONFIG_LIBSQLITE_MAIN_FUNCTION=y
+volumes:
+  fs0:
+    driver: 9pfs
+    source: minrootfs.tgz
