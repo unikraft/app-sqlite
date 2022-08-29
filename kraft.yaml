@@ -1,7 +1,8 @@
+---
 specification: '0.5'
 name: sqlite
 unikraft:
-  version: '0.5'
+  version: stable
   kconfig:
     - CONFIG_LIBUK9P=y
     - CONFIG_LIB9PFS=y
@@ -17,13 +18,14 @@ targets:
   - architecture: x86_64
     platform: kvm
 libraries:
-  pthread-embedded: '0.5'
+  pthread-embedded:
+    version: stable
   newlib:
-    version: '0.5'
+    version: stable
     kconfig:
       - CONFIG_LIBNEWLIBC=y
   sqlite:
-    version: '0.5'
+    version: stable
     kconfig:
       - CONFIG_LIBSQLITE_MAIN_FUNCTION=y
 volumes:
