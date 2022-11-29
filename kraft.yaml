@@ -20,12 +20,8 @@ targets:
   - architecture: arm64
     platform: kvm
 libraries:
-  pthread-embedded:
+  musl:
     version: stable
-  newlib:
-    version: stable
-    kconfig:
-      - CONFIG_LIBNEWLIBC=y
   sqlite:
     version: stable
     kconfig:
