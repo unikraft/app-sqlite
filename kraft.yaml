@@ -16,9 +16,9 @@ unikraft:
     - CONFIG_LIBPOSIX_SYSINFO=y
 targets:
   - architecture: x86_64
-    platform: kvm
+    platform: qemu
   - architecture: arm64
-    platform: kvm
+    platform: qemu
 libraries:
   musl:
     version: stable
