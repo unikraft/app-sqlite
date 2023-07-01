@@ -40,7 +40,7 @@ Run the application:
 ```
 sudo qemu-system-x86_64 -fsdev local,id=myid,path=$(pwd)/fs0,security_model=none \
                         -device virtio-9p-pci,fsdev=myid,mount_tag=fs0,disable-modern=on,disable-legacy=off \
-                        -kernel "build/app-sqlite_kvm-x86_64" \
+                        -kernel "build/app-sqlite_qemu-x86_64" \
                         -enable-kvm \
                         -nographic
 ```
