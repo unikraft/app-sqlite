@@ -3,6 +3,40 @@
 This application starts an SQLite web server with Unikraft.
 Follow the instructions below to set up, configure, build and run SQLite.
 
+## Quick Setup (aka TLDR)
+
+For a quick setup, run the commands below.
+Note that you still need to install the [requirements](#requirements).
+
+For building and running everything for `x86_64`, follow the steps below:
+
+```console
+git clone https://github.com/unikraft/app-sqlite sqlite
+cd sqlite/
+mkdir .unikraft
+git clone https://github.com/unikraft/unikraft .unikraft/unikraft
+git clone https://github.com/unikraft/lib-sqlite .unikraft/libs/sqlite
+git clone https://github.com/unikraft/lib-musl .unikraft/libs/musl
+UK_DEFCONFIG=$(pwd)/.config.sqlite_qemu-x86_64 make defconfig
+make -j $(nproc)
+./run-qemu-x86_64.sh
+```
+
+This will configure, build and run the `sqlite` application.
+You can see how to test it in the [running section](#run).
+
+The same can be done for `AArch64`, by running the commands below:
+
+```console
+make properclean
+UK_DEFCONFIG=$(pwd)/.config.sqlite_qemu-arm64 make defconfig
+make -j $(nproc)
+./run-qemu-aarch64.sh
+```
+
+Similar to the `x86_64` build, this will start the `sqlite` server.
+Information about every step is detailed below.
+
 ## Requirements
 
 In order to set up, configure, build and run SQLite on Unikraft, the following packages are required:
@@ -25,7 +59,7 @@ GCC >= 8 is required to build SQLite on Unikraft.
 On Ubuntu/Debian or other `apt`-based distributions, run the following command to install the requirements:
 
 ```console
-$ sudo apt install -y --no-install-recommends \
+sudo apt install -y --no-install-recommends \
   build-essential \
   sudo \
   gcc-aarch64-linux-gnu \
@@ -57,61 +91,71 @@ Follow the steps below for the setup:
   1. First clone the [`app-sqlite` repository](https://github.com/unikraft/app-sqlite) in the `sqlite/` directory:
 
      ```console
-     $ git clone https://github.com/unikraft/app-sqlite sqlite
+     git clone https://github.com/unikraft/app-sqlite sqlite
      ```
 
      Enter the `sqlite/` directory:
 
      ```console
-     $ cd sqlite/
+     cd sqlite/
 
-     $ ls -F
-     config-qemu-aarch64  config-qemu-x86_64  fs0/  kraft.yaml  Makefile  Makefile.uk  README.md  run-qemu-aarch64.sh*  run-qemu-x86_64.sh*
+     ls -F
+     ```
+
+     This will list the contents of the repository:
+
+     ```text
+     .config.sqlite_qemu-arm64  .config.sqlite_qemu-x86_64  fs0/  kraft.yaml  Makefile  Makefile.uk  README.md  run-qemu-aarch64.sh*  run-qemu-x86_64.sh*
      ```
 
   1. While inside the `sqlite/` directory, create the `.unikraft/` directory:
 
      ```console
-     $ mkdir .unikraft
+     mkdir .unikraft
      ```
 
      Enter the `.unikraft/` directory:
 
      ```console
-     $ cd .unikraft/
+     cd .unikraft/
      ```
 
   1. While inside the `.unikraft` directory, clone the [`unikraft` repository](https://github.com/unikraft/unikraft):
 
      ```console
-     $ git clone https://github.com/unikraft/unikraft unikraft
+     git clone https://github.com/unikraft/unikraft unikraft
      ```
 
   1. While inside the `.unikraft/` directory, create the `libs/` directory:
 
      ```console
-     $ mkdir libs
+     mkdir libs
      ```
 
   1. While inside the `.unikraft/` directory, clone the library repositories in the `libs/` directory:
 
      ```console
-     $ git clone https://github.com/unikraft/lib-sqlite libs/sqlite
+     git clone https://github.com/unikraft/lib-sqlite libs/sqlite
 
-     $ git clone https://github.com/unikraft/lib-musl libs/musl
+     git clone https://github.com/unikraft/lib-musl libs/musl
      ```
 
   1. Get back to the application directory:
 
      ```console
-     $ cd ../
+     cd ../
      ```
 
      Use the `tree` command to inspect the contents of the `.unikraft/` directory.
      It should print something like this:
 
      ```console
-     $ tree -F -L 2 .unikraft/
+     tree -F -L 2 .unikraft/
+     ```
+
+     The layout of the `.unikraft/` repository should look something like this:
+
+     ```text
      .unikraft/
      |-- libs/
      |   |-- lwip/
@@ -146,16 +190,16 @@ Use the corresponding the configuration files (`config-...`), according to your 
 
 ### QEMU x86_64
 
-Use the `config-qemu-x86_64` configuration file together with `make defconfig` to create the configuration file:
+Use the `.config.sqlite_qemu-x86_64` configuration file together with `make defconfig` to create the configuration file:
 
 ```console
-$ UK_DEFCONFIG=$(pwd)/config-qemu-x86_64 make defconfig
+UK_DEFCONFIG=$(pwd)/.config.sqlite_qemu-x86_64 make defconfig
 ```
 
 This results in the creation of the `.config` file:
 
 ```console
-$ ls .config
+ls .config
 .config
 ```
 
@@ -163,10 +207,10 @@ The `.config` file will be used in the build step.
 
 ### QEMU AArch64
 
-Use the `config-qemu-aarch64` configuration file together with `make defconfig` to create the configuration file:
+Use the `.config.sqlite_qemu-arm64` configuration file together with `make defconfig` to create the configuration file:
 
 ```console
-$ UK_DEFCONFIG=$(pwd)/config-qemu-aarch64 make defconfig
+UK_DEFCONFIG=$(pwd)/.config.sqlite_qemu-arm64 make defconfig
 ```
 
 Similar to the x86_64 configuration, this results in the creation of the `.config` file that will be used in the build step.
@@ -195,7 +239,12 @@ Building for QEMU x86_64 assumes you did the QEMU x86_64 configuration step abov
 Build the Unikraft SQLite image for QEMU AArch64 by using the command below:
 
 ```console
-$ make -j $(nproc)
+make -j $(nproc)
+```
+
+This will print the list of files that are generated by the build system.
+
+```text
 [...]
   LD      sqlite_qemu-x86_64.dbg
   UKBI    sqlite_qemu-x86_64.dbg.bootinfo
@@ -221,7 +270,12 @@ Building for QEMU AArch64 assumes you did the QEMU AArch64 configuration step ab
 Build the Unikraft SQLite image for QEMU AArch64 by using the same command as for x86_64:
 
 ```console
-$ make -j $(nproc)
+make -j $(nproc)
+```
+
+Similar to the x86_64 build, this will print the list of files that are generated by the build system.
+
+```text
 [...]
   LD      sqlite_qemu-arm64.dbg
   UKBI    sqlite_qemu-arm64.dbg.bootinfo
@@ -242,7 +296,12 @@ Run the resulting image with the `run-...` scripts.
 To run the QEMU x86_64 build, use `run-qemu-x86_64.sh`:
 
 ```console
-$ ./run-qemu-x86_64.sh
+./run-qemu-x86_64.sh
+```
+
+This will start the SQLite application:
+
+```text
 Powered by
 o.   .o       _ _               __ _
 Oo   Oo  ___ (_) | __ __  __ _ ' _) :_
@@ -280,10 +339,15 @@ that is press the `Ctrl` and `a` keys at the same time and then, separately, pre
 ### QEMU AArch64
 
 To run the AArch64 build, use `run-qemu-aarch64.sh`.
-You can ignore the errors that appear at top.
 
 ```console
-$ ./run-qemu-aarch64.sh
+./run-qemu-aarch64.sh
+```
+
+This will start the SQLite application.
+You can ignore the errors that appear at top:
+
+```text
 [    0.014856] ERR:  [libkvmvirtio] <virtio_bus.c @  140> Failed to find the driver for the virtio device 0x40338020 (id:1)
 [    0.015369] ERR:  [libkvmvirtio] <virtio_pci.c @  425> Failed to register the virtio device: -14
 [    0.015550] ERR:  [libkvmpci] <pci_bus_arm64.c @  100> PCI 00:01.00: Failed to initialize device driver
