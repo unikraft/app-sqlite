@@ -1,0 +1,22 @@
+{
+  "boot-source": {
+    "kernel_image_path": "build/sqlite_fc-x86_64",
+    "boot_args": "console=ttyS0",
+    "initrd_path": "fs0.cpio"
+  },
+  "drives": [],
+  "machine-config": {
+    "vcpu_count": 1,
+    "mem_size_mib": 512,
+    "smt": false,
+    "track_dirty_pages": false
+  },
+  "cpu-config": null,
+  "balloon": null,
+  "network-interfaces": [],
+  "vsock": null,
+  "logger": null,
+  "metrics": null,
+  "mmds-config": null,
+  "entropy": null
+}
