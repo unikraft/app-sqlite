@@ -2,3 +2,4 @@
 /.config.old
 /build/
 /.unikraft/
+/fs0.cpio
