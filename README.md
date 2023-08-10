@@ -3,7 +3,51 @@
 This application starts an SQLite web server with Unikraft.
 Follow the instructions below to set up, configure, build and run SQLite.
 
-## Quick Setup (aka TLDR)
+To get started immediately, you can use Unikraft's companion command-line companion tool, [`kraft`](https://github.com/unikraft/kraftkit).
+Start by running the interactive installer:
+
+```console
+curl --proto '=https' --tlsv1.2 -sSf https://get.kraftkit.sh | sudo sh
+```
+
+Once installed, clone [this repository](https://github.com/unikraft/app-sqlite) and run `kraft build`:
+
+```console
+git clone https://github.com/unikraft/app-sqlite sqlite
+cd sqlite/
+kraft build
+```
+
+This will guide you through an interactive build process where you can select one of the available targets (architecture/platform combinations).
+You will get a list of options out of which to select one:
+
+```text
+[?] select target:
+  ▸ sqlite-fc-aarch64-initrd (fc/arm64)
+    sqlite-fc-x86_64-initrd (fc/x86_64)
+    sqlite-qemu-aarch64-9pfs (qemu/arm64)
+    sqlite-qemu-aarch64-initrd (qemu/arm64)
+    sqlite-qemu-x86_64-9pfs (qemu/x86_64)
+    sqlite-qemu-x86_64-initrd (qemu/x86_64)
+```
+
+Otherwise, we recommend building for `qemu/x86_64` with an `initrd` support filesystem like so:
+
+```console
+kraft build --target sqlite-qemu-x86_64-initrd -j $(nproc)
+```
+
+Once built, you can instantiate the unikernel via:
+
+```console
+kraft run --initrd fs0/
+```
+
+## Work with the Basic Build & Run Toolchain (Advanced)
+
+You can set up, configure, build and run the application from grounds up, without using the companion tool `kraft`.
+
+### Quick Setup (aka TLDR)
 
 For a quick setup, run the commands below.
 Note that you still need to install the [requirements](#requirements).
@@ -17,9 +61,12 @@ mkdir .unikraft
 git clone https://github.com/unikraft/unikraft .unikraft/unikraft
 git clone https://github.com/unikraft/lib-sqlite .unikraft/libs/sqlite
 git clone https://github.com/unikraft/lib-musl .unikraft/libs/musl
-UK_DEFCONFIG=$(pwd)/.config.sqlite_qemu-x86_64 make defconfig
+UK_DEFCONFIG=$(pwd)/.config.sqlite-qemu-x86_64-9pfs make defconfig
 make -j $(nproc)
-./run-qemu-x86_64.sh
+qemu-system-x86_64 \
+    -fsdev local,id=myid,path="$(pwd)/fs0",security_model=none \
+    -device virtio-9p-pci,fsdev=myid,mount_tag=fs0,disable-modern=on,disable-legacy=off \
+    -kernel build/sqlite_qemu-x86_64 -nographic
 ```
 
 This will configure, build and run the `sqlite` application.
@@ -29,15 +76,19 @@ The same can be done for `AArch64`, by running the commands below:
 
 ```console
 make properclean
-UK_DEFCONFIG=$(pwd)/.config.sqlite_qemu-arm64 make defconfig
+UK_DEFCONFIG=$(pwd)/.config.sqlite-qemu-aarch64-9pfs make defconfig
 make -j $(nproc)
-./run-qemu-aarch64.sh
+qemu-system-aarch64 \
+    -fsdev local,id=myid,path="$(pwd)/fs0",security_model=none \
+    -device virtio-9p-pci,fsdev=myid,mount_tag=fs0,disable-modern=on,disable-legacy=off \
+    -kernel build/sqlite_qemu-arm64 -nographic \
+    -machine virt -cpu cortex-a57
 ```
 
 Similar to the `x86_64` build, this will start the `sqlite` server.
 Information about every step is detailed below.
 
-## Requirements
+### Requirements
 
 In order to set up, configure, build and run SQLite on Unikraft, the following packages are required:
 
@@ -76,7 +127,7 @@ sudo apt install -y --no-install-recommends \
   sgabios
 ```
 
-## Set Up
+### Set Up
 
 The following repositories are required for SQLite:
 
@@ -105,7 +156,7 @@ Follow the steps below for the setup:
      This will list the contents of the repository:
 
      ```text
-     .config.sqlite_qemu-arm64  .config.sqlite_qemu-x86_64  fs0/  kraft.yaml  Makefile  Makefile.uk  README.md  run-qemu-aarch64.sh*  run-qemu-x86_64.sh*
+     .config.sqlite-qemu-aarch64-9pfs  .config.sqlite-qemu-x86_64-9pfs [...] fs0/  kraft.yaml  Makefile  Makefile.uk  README.md  [...]
      ```
 
   1. While inside the `sqlite/` directory, create the `.unikraft/` directory:
@@ -178,7 +229,7 @@ Follow the steps below for the setup:
      10 directories, 7 files
      ```
 
-## Configure
+### Configure
 
 Configuring, building and running a Unikraft application depends on our choice of platform and architecture.
 Currently, supported platforms are QEMU (KVM), Xen and linuxu.
@@ -188,12 +239,12 @@ Supported architectures are x86_64 and AArch64.
 
 Use the corresponding the configuration files (`config-...`), according to your choice of platform and architecture.
 
-### QEMU x86_64
+#### QEMU x86_64
 
-Use the `.config.sqlite_qemu-x86_64` configuration file together with `make defconfig` to create the configuration file:
+Use the `.config.sqlite-qemu-x86_64-9pfs` configuration file together with `make defconfig` to create the configuration file:
 
 ```console
-UK_DEFCONFIG=$(pwd)/.config.sqlite_qemu-x86_64 make defconfig
+UK_DEFCONFIG=$(pwd)/.config.sqlite-qemu-x86_64-9pfs make defconfig
 ```
 
 This results in the creation of the `.config` file:
@@ -205,22 +256,22 @@ ls .config
 
 The `.config` file will be used in the build step.
 
-### QEMU AArch64
+#### QEMU AArch64
 
-Use the `.config.sqlite_qemu-arm64` configuration file together with `make defconfig` to create the configuration file:
+Use the `.config.sqlite-qemu-aarch64-9pfs` configuration file together with `make defconfig` to create the configuration file:
 
 ```console
-UK_DEFCONFIG=$(pwd)/.config.sqlite_qemu-arm64 make defconfig
+UK_DEFCONFIG=$(pwd)/.config.sqlite-qemu-aarch64-9pfs make defconfig
 ```
 
 Similar to the x86_64 configuration, this results in the creation of the `.config` file that will be used in the build step.
 
-## Build
+### Build
 
 Building uses as input the `.config` file from above, and results in a unikernel image as output.
 The unikernel output image, together with intermediary build files, are stored in the `build/` directory.
 
-### Clean Up
+#### Clean Up
 
 Before starting a build on a different platform or architecture, you must clean up the build output.
 This may also be required in case of a new configuration.
@@ -233,7 +284,7 @@ Cleaning up is done with 3 possible commands:
 
 Typically, you would use `make properclean` to remove all build artifacts, but keep the configuration file.
 
-### QEMU x86_64
+#### QEMU x86_64
 
 Building for QEMU x86_64 assumes you did the QEMU x86_64 configuration step above.
 Build the Unikraft SQLite image for QEMU AArch64 by using the command below:
@@ -256,7 +307,7 @@ make[1]: Leaving directory '/media/stefan/projects/unikraft/scripts/workdir/apps
 At the end of the build command, the `sqlite_qemu-x86_64` unikernel image is generated.
 This image is to be used in the run step.
 
-### QEMU AArch64
+#### QEMU AArch64
 
 If you had configured and build a unikernel image for another platform or architecture (such as x86_64) before, then:
 
@@ -287,16 +338,19 @@ make[1]: Leaving directory '/media/stefan/projects/unikraft/scripts/workdir/apps
 Similarly to x86_64, at the end of the build command, the `sqlite_qemu-arm64` unikernel image is generated.
 This image is to be used in the run step.
 
-## Run
+### Run
 
-Run the resulting image with the `run-...` scripts.
+Run the resulting image using `qemu-system`.
 
-### QEMU x86_64
+#### QEMU x86_64
 
-To run the QEMU x86_64 build, use `run-qemu-x86_64.sh`:
+To run the QEMU x86_64 build, use `qemu-system-x86_64`:
 
 ```console
-./run-qemu-x86_64.sh
+qemu-system-x86_64 \
+    -fsdev local,id=myid,path=$(pwd)/fs0,security_model=none \
+    -device virtio-9p-pci,fsdev=myid,mount_tag=fs0,disable-modern=on,disable-legacy=off \
+    -kernel build/sqlite_qemu-x86_64 -nographic
 ```
 
 This will start the SQLite application:
@@ -336,12 +390,16 @@ sqlite> .exit
 To close the QEMU Python3 application, use the `.exit` command or the `Ctrl+a x` keyboard shortcut;
 that is press the `Ctrl` and `a` keys at the same time and then, separately, press the `x` key.
 
-### QEMU AArch64
+#### QEMU AArch64
 
-To run the AArch64 build, use `run-qemu-aarch64.sh`.
+To run the AArch64 build, use `qemu-system-aarch64`:
 
 ```console
-./run-qemu-aarch64.sh
+qemu-system-aarch64 \
+    -fsdev local,id=myid,path=$(pwd)/fs0,security_model=none \
+    -device virtio-9p-pci,fsdev=myid,mount_tag=fs0,disable-modern=on,disable-legacy=off \
+    -kernel build/sqlite_qemu-arm64 -nographic \
+    -machine virt -cpu max
 ```
 
 This will start the SQLite application.
@@ -383,3 +441,85 @@ sqlite> .exit
 ```
 
 Similarly, to close the QEMU SQLite server, use the `Ctrl+a x` keyboard shortcut.
+
+### Building and Running with initrd
+
+The examples above use 9pfs as the filesystem interface.
+In order two use initrd, you need to first create a CPIO archive that will be passed as the initial ramdisk:
+
+```console
+cd fs0 && find -depth -print | tac | bsdcpio -o --format newc > ../fs0.cpio && cd ..
+```
+
+Clean up previous configuration, use the initrd configuration and build the unikernel by using the commands:
+
+```console
+make distclean
+UK_DEFCONFIG=$(pwd)/.config.sqlite-qemu-x86_64-initrd make defconfig
+make -j $(nproc)
+```
+
+Then, run the resulting image with:
+
+```console
+qemu-system-x86_64 -kernel build/sqlite_qemu-x86_64 -nographic -initrd fs0.cpio
+```
+
+The commands for AArch64 are similar:
+
+```console
+make distclean
+UK_DEFCONFIG=$(pwd)/.config.sqlite-qemu-aarch64-initrd make defconfig
+make -j $(nproc)
+qemu-system-aarch64 -kernel build/sqlite_qemu-arm64 -nographic -initrd fs0.cpio -append -machine virt -cpu max
+```
+
+### Building and Running with Firecracker
+
+[Firecracker](https://firecracker-microvm.github.io/) is a lightweight VMM (*virtual machine manager*) that can be used as more efficient alternative to QEMU.
+
+Configure and build commands are similar to a QEMU-based build with an initrd-based filesystem:
+
+```console
+make distclean
+UK_DEFCONFIG=$(pwd)/.config.sqlite-fc-x86_64-initrd make defconfig
+make -j $(nproc)
+```
+
+For running, a CPIO archive of the filesystem is required to be passed as the initial ramdisk:
+
+```console
+cd fs0 && find -depth -print | tac | bsdcpio -o --format newc > ../fs0.cpio && cd ..
+```
+
+To use Firecraker, you need to download a [Firecracker release](https://github.com/firecracker-microvm/firecracker/releases).
+You can use the commands below to make the `firecracker-x86_64` executable from release v1.4.0 available globally in the command line:
+
+```console
+cd /tmp 
+wget https://github.com/firecracker-microvm/firecracker/releases/download/v1.4.0/firecracker-v1.4.0-x86_64.tgz
+tar xzf firecracker-v1.4.0-x86_64.tgz 
+sudo cp release-v1.4.0-x86_64/firecracker-v1.4.0-x86_64 /usr/local/bin/firecracker-x86_64
+```
+
+To run a unikernel image, you need to configure a JSON file.
+This is the `sqlite-fc-x86_64-initrd.json` file.
+Pass this file to the `firecracker-x86_64` command to run the Unikernel instance:
+
+```console
+rm /tmp/firecracker.socket
+firecracker-x86_64 --api-sock /tmp/firecracker.socket --config-file sqlite-fc-x86_64-initrd.json
+```
+
+Same as running with QEMU, the application will start:
+
+```text
+Powered by
+o.   .o       _ _               __ _
+Oo   Oo  ___ (_) | __ __  __ _ ' _) :_
+oO   oO ' _ `| | |/ /  _)' _` | |_|  _)
+oOo oOO| | | | |   (| | | (_) |  _) :_
+ OoOoO ._, ._:_:_,\_._,  .__,_:_, \___)
+                  Atlas 0.13.1~f7511c8b
+sqlite> .exit
+```
