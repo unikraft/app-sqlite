@@ -1,0 +1,29 @@
+specification: '0.5'
+name: sqlite
+unikraft:
+  version: cloud
+  kconfig:
+    - CONFIG_LIBUKLIBPARAM=y
+    - CONFIG_LIBPOSIX_MMAP=y
+    - CONFIG_LIBPOSIX_SYSINFO=y
+targets:
+  - name: kraftcloud-x86_64
+    architecture: x86_64
+    platform: firecracker
+    kconfig:
+      - CONFIG_PLAT_KVM=y
+      - CONFIG_KVM_BOOT_PROTO_LXBOOT=y
+      - CONFIG_KVM_VMM_FIRECRACKER=y
+      - CONFIG_LIBVFSCORE_AUTOMOUNT_ROOTFS=y
+      - CONFIG_LIBVFSCORE_ROOTFS_INITRD=y
+      - CONFIG_LIBVFSCORE_ROOTFS="initrd"
+libraries:
+  musl:
+    version: stable
+  sqlite:
+    version: stable
+    kconfig:
+      - CONFIG_LIBSQLITE_MAIN_FUNCTION=y
+  ukp-bin:
+    source: https://github.com/unikraft-io/lib-ukp-bin
+    version: stable
