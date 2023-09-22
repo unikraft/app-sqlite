@@ -3,3 +3,4 @@
 /build/
 /.unikraft/
 /fs0.cpio
+/workdir/
