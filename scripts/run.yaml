@@ -1,0 +1,4 @@
+runs:
+  - rootfs: ./rootfs
+    memory: 64
+    networking: False
