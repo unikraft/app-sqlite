@@ -40,7 +40,7 @@ kraft build --target sqlite-qemu-x86_64-initrd -j $(nproc)
 Once built, you can instantiate the unikernel via:
 
 ```console
-kraft run --initrd fs0/
+kraft run --initrd rootfs/
 ```
 
 ## Work with the Basic Build & Run Toolchain (Advanced)
@@ -57,16 +57,12 @@ For building and running everything for `x86_64`, follow the steps below:
 ```console
 git clone https://github.com/unikraft/app-sqlite sqlite
 cd sqlite/
-mkdir .unikraft
-git clone https://github.com/unikraft/unikraft .unikraft/unikraft
-git clone https://github.com/unikraft/lib-sqlite .unikraft/libs/sqlite
-git clone https://github.com/unikraft/lib-musl .unikraft/libs/musl
-UK_DEFCONFIG=$(pwd)/.config.sqlite-qemu-x86_64-9pfs make defconfig
-make -j $(nproc)
-qemu-system-x86_64 \
-    -fsdev local,id=myid,path="$(pwd)/fs0",security_model=none \
-    -device virtio-9p-pci,fsdev=myid,mount_tag=fs0,disable-modern=on,disable-legacy=off \
-    -kernel build/sqlite_qemu-x86_64 -nographic
+./scripts/setup.sh
+wget https://raw.githubusercontent.com/unikraft/app-testing/staging/scripts/generate.py -O scripts/generate.py
+chmod a+x scripts/generate.py
+./scripts/generate.py
+./scripts/build/make-qemu-x86_64-9pfs.sh 
+./scripts/run/qemu-x86_64-9pfs.sh 
 ```
 
 This will configure, build and run the `sqlite` application.
@@ -75,14 +71,14 @@ You can see how to test it in the [running section](#run).
 The same can be done for `AArch64`, by running the commands below:
 
 ```console
-make properclean
-UK_DEFCONFIG=$(pwd)/.config.sqlite-qemu-aarch64-9pfs make defconfig
-make -j $(nproc)
-qemu-system-aarch64 \
-    -fsdev local,id=myid,path="$(pwd)/fs0",security_model=none \
-    -device virtio-9p-pci,fsdev=myid,mount_tag=fs0,disable-modern=on,disable-legacy=off \
-    -kernel build/sqlite_qemu-arm64 -nographic \
-    -machine virt -cpu cortex-a57
+git clone https://github.com/unikraft/app-sqlite sqlite
+cd sqlite/
+./scripts/setup.sh
+wget https://raw.githubusercontent.com/unikraft/app-testing/staging/scripts/generate.py -O scripts/generate.py
+chmod a+x scripts/generate.py
+./scripts/generate.py
+./scripts/build/make-qemu-arm64-9pfs.sh 
+./scripts/run/qemu-arm64-9pfs.sh 
 ```
 
 Similar to the `x86_64` build, this will start the `sqlite` server.
@@ -156,34 +152,34 @@ Follow the steps below for the setup:
      This will list the contents of the repository:
 
      ```text
-     .config.sqlite-qemu-aarch64-9pfs  .config.sqlite-qemu-x86_64-9pfs [...] fs0/  kraft.yaml  Makefile  Makefile.uk  README.md  [...]
+     defconfigs/ scripts/ [...] rootfs/  kraft.yaml  Makefile  Makefile.uk  README.md  [...]
      ```
 
-  1. While inside the `sqlite/` directory, create the `.unikraft/` directory:
+  1. While inside the `sqlite/` directory, create the `workdir/` directory:
 
      ```console
-     mkdir .unikraft
+     mkdir workdir
      ```
 
-     Enter the `.unikraft/` directory:
+     Enter the `workdir/` directory:
 
      ```console
-     cd .unikraft/
+     cd workdir/
      ```
 
-  1. While inside the `.unikraft` directory, clone the [`unikraft` repository](https://github.com/unikraft/unikraft):
+  1. While inside the `workdir` directory, clone the [`unikraft` repository](https://github.com/unikraft/unikraft):
 
      ```console
      git clone https://github.com/unikraft/unikraft unikraft
      ```
 
-  1. While inside the `.unikraft/` directory, create the `libs/` directory:
+  1. While inside the `workdir/` directory, create the `libs/` directory:
 
      ```console
      mkdir libs
      ```
 
-  1. While inside the `.unikraft/` directory, clone the library repositories in the `libs/` directory:
+  1. While inside the `workdir/` directory, clone the library repositories in the `libs/` directory:
 
      ```console
      git clone https://github.com/unikraft/lib-sqlite libs/sqlite
@@ -197,17 +193,17 @@ Follow the steps below for the setup:
      cd ../
      ```
 
-     Use the `tree` command to inspect the contents of the `.unikraft/` directory.
+     Use the `tree` command to inspect the contents of the `workdir/` directory.
      It should print something like this:
 
      ```console
-     tree -F -L 2 .unikraft/
+     tree -F -L 2 workdir/
      ```
 
-     The layout of the `.unikraft/` repository should look something like this:
+     The layout of the `workdir/` repository should look something like this:
 
      ```text
-     .unikraft/
+     workdir/
      |-- libs/
      |   |-- lwip/
      |   |-- musl/
@@ -229,6 +225,55 @@ Follow the steps below for the setup:
      10 directories, 7 files
      ```
 
+## Scripted Building and Running
+
+To make it easier to build, run and test different configurations, the repository provides a set of scripts that do everything required.
+These are scripts used for building different configurations of the SQLite server and for running these with all the requirements behind the scenes.
+
+First of all, grab the [`generate.py` script](https://github.com/unikraft/app-testing/blob/staging/scripts/generate.py) and place it in the `scripts/` directory by running:
+
+```console
+wget https://raw.githubusercontent.com/unikraft/app-testing/staging/scripts/generate.py -O scripts/generate.py
+chmod a+x scripts/generate.py
+```
+
+Now, run the `generate.py` script.
+You must run it in the root directory of this repository:
+
+```console
+./scripts/generate.py
+```
+
+The scripts (as shell scripts) are now generated in `scripts/build/` and `scripts/run/`:
+
+```text
+scripts/build/:
+kraft-fc-aarch64-initrd.sh*  kraft-qemu-aarch64-9pfs.sh*    kraft-qemu-x86_64-9pfs.sh*    make-fc-x86_64-initrd.sh*  make-qemu-arm64-initrd.sh*  make-qemu-x86_64-initrd.sh*
+kraft-fc-x86_64-initrd.sh*   kraft-qemu-aarch64-initrd.sh*  kraft-qemu-x86_64-initrd.sh*  make-qemu-arm64-9pfs.sh*   make-qemu-x86_64-9pfs.sh*
+
+scripts/run:
+fc-x86_64-initrd-sqlite.json  kraft-fc-aarch64-initrd-sqlite.sh*  kraft-qemu-aarch64-9pfs-sqlite.sh*    kraft-qemu-x86_64-9pfs-sqlite.sh*    qemu-arm64-9pfs-sqlite.sh*    qemu-x86_64-9pfs-sqlite.sh*
+fc-x86_64-initrd-sqlite.sh*   kraft-fc-x86_64-initrd-sqlite.sh*   kraft-qemu-aarch64-initrd-sqlite.sh*  kraft-qemu-x86_64-initrd-sqlite.sh*  qemu-arm64-initrd-sqlite.sh*  qemu-x86_64-initrd-sqlite.sh*
+```
+
+They are shell scripts, so you can use an editor or a text viewer to check their contents:
+
+```console
+cat scripts/run/kraft-fc-x86_64-initrd-sqlite.sh
+```
+
+Now, invoke each script to build and run the application.
+A sample build and run set of commands is:
+
+```console
+./scripts/build/make-qemu-arm64-9pfs.sh
+./scripts/run/qemu-x86_64-9pfs-sqlite.sh
+```
+
+Note that Firecracker only works with initrd (not 9pfs).
+
+## Detailed Steps
+
 ### Configure
 
 Configuring, building and running a Unikraft application depends on our choice of platform and architecture.
@@ -237,14 +282,14 @@ QEMU (KVM) is known to be working, so we focus on that.
 
 Supported architectures are x86_64 and AArch64.
 
-Use the corresponding the configuration files (`config-...`), according to your choice of platform and architecture.
+Use the corresponding the configuration files (`defconfigs/*`), according to your choice of platform and architecture.
 
 #### QEMU x86_64
 
-Use the `.config.sqlite-qemu-x86_64-9pfs` configuration file together with `make defconfig` to create the configuration file:
+Use the `defconfigs/qemu-x86_64-9pfs` configuration file together with `make defconfig` to create the configuration file:
 
 ```console
-UK_DEFCONFIG=$(pwd)/.config.sqlite-qemu-x86_64-9pfs make defconfig
+UK_DEFCONFIG=$(pwd)/defconfigs/qemu-x86_64-9pfs make defconfig
 ```
 
 This results in the creation of the `.config` file:
@@ -258,10 +303,10 @@ The `.config` file will be used in the build step.
 
 #### QEMU AArch64
 
-Use the `.config.sqlite-qemu-aarch64-9pfs` configuration file together with `make defconfig` to create the configuration file:
+Use the `defconfigs/qemu-arm64-9pfs` configuration file together with `make defconfig` to create the configuration file:
 
 ```console
-UK_DEFCONFIG=$(pwd)/.config.sqlite-qemu-aarch64-9pfs make defconfig
+UK_DEFCONFIG=$(pwd)/defconfigs/qemu-arm64-9pfs make defconfig
 ```
 
 Similar to the x86_64 configuration, this results in the creation of the `.config` file that will be used in the build step.
@@ -301,7 +346,7 @@ This will print the list of files that are generated by the build system.
   UKBI    sqlite_qemu-x86_64.dbg.bootinfo
   SCSTRIP sqlite_qemu-x86_64
   GZ      sqlite_qemu-x86_64.gz
-make[1]: Leaving directory '/media/stefan/projects/unikraft/scripts/workdir/apps/app-sqlite/.unikraft/unikraft'
+make[1]: Leaving directory 'sqlite/workdir/unikraft'
 ```
 
 At the end of the build command, the `sqlite_qemu-x86_64` unikernel image is generated.
@@ -332,7 +377,7 @@ Similar to the x86_64 build, this will print the list of files that are generate
   UKBI    sqlite_qemu-arm64.dbg.bootinfo
   SCSTRIP sqlite_qemu-arm64
   GZ      sqlite_qemu-arm64.gz
-make[1]: Leaving directory '/media/stefan/projects/unikraft/scripts/workdir/apps/app-sqlite/.unikraft/unikraft'
+make[1]: Leaving directory 'sqlite/workdir/unikraft'
 ```
 
 Similarly to x86_64, at the end of the build command, the `sqlite_qemu-arm64` unikernel image is generated.
@@ -348,9 +393,9 @@ To run the QEMU x86_64 build, use `qemu-system-x86_64`:
 
 ```console
 qemu-system-x86_64 \
-    -fsdev local,id=myid,path=$(pwd)/fs0,security_model=none \
-    -device virtio-9p-pci,fsdev=myid,mount_tag=fs0,disable-modern=on,disable-legacy=off \
-    -kernel build/sqlite_qemu-x86_64 -nographic
+    -fsdev local,id=myid,path=$(pwd)/fs1,security_model=none \
+    -device virtio-9p-pci,fsdev=myid,mount_tag=rootfs,disable-modern=on,disable-legacy=off \
+    -kernel workdir/build/sqlite_qemu-x86_64 -nographic
 ```
 
 This will start the SQLite application:
@@ -396,9 +441,9 @@ To run the AArch64 build, use `qemu-system-aarch64`:
 
 ```console
 qemu-system-aarch64 \
-    -fsdev local,id=myid,path=$(pwd)/fs0,security_model=none \
-    -device virtio-9p-pci,fsdev=myid,mount_tag=fs0,disable-modern=on,disable-legacy=off \
-    -kernel build/sqlite_qemu-arm64 -nographic \
+    -fsdev local,id=myid,path=$(pwd)/fs1,security_model=none \
+    -device virtio-9p-pci,fsdev=myid,mount_tag=rootfs,disable-modern=on,disable-legacy=off \
+    -kernel workdir/build/sqlite_qemu-arm64 -nographic \
     -machine virt -cpu max
 ```
 
@@ -448,30 +493,30 @@ The examples above use 9pfs as the filesystem interface.
 In order two use initrd, you need to first create a CPIO archive that will be passed as the initial ramdisk:
 
 ```console
-cd fs0 && find -depth -print | tac | bsdcpio -o --format newc > ../fs0.cpio && cd ..
+cd rootfs && find -depth -print | tac | bsdcpio -o --format newc > ../rootfs.cpio && cd ..
 ```
 
 Clean up previous configuration, use the initrd configuration and build the unikernel by using the commands:
 
 ```console
 make distclean
-UK_DEFCONFIG=$(pwd)/.config.sqlite-qemu-x86_64-initrd make defconfig
+UK_DEFCONFIG=$(pwd)/defconfigs/qemu-x86_64-initrd make defconfig
 make -j $(nproc)
 ```
 
 Then, run the resulting image with:
 
 ```console
-qemu-system-x86_64 -kernel build/sqlite_qemu-x86_64 -nographic -initrd fs0.cpio
+qemu-system-x86_64 -kernel workdir/build/sqlite_qemu-x86_64 -nographic -initrd rootfs.cpio
 ```
 
 The commands for AArch64 are similar:
 
 ```console
 make distclean
-UK_DEFCONFIG=$(pwd)/.config.sqlite-qemu-aarch64-initrd make defconfig
+UK_DEFCONFIG=$(pwd)/defconfigs/qemu-arm64-initrd make defconfig
 make -j $(nproc)
-qemu-system-aarch64 -kernel build/sqlite_qemu-arm64 -nographic -initrd fs0.cpio -append -machine virt -cpu max
+qemu-system-aarch64 -kernel workdir/build/sqlite_qemu-arm64 -nographic -initrd rootfs.cpio -append -machine virt -cpu max
 ```
 
 ### Building and Running with Firecracker
@@ -482,14 +527,14 @@ Configure and build commands are similar to a QEMU-based build with an initrd-ba
 
 ```console
 make distclean
-UK_DEFCONFIG=$(pwd)/.config.sqlite-fc-x86_64-initrd make defconfig
+UK_DEFCONFIG=$(pwd)/defconfigs/fc-x86_64-initrd make defconfig
 make -j $(nproc)
 ```
 
 For running, a CPIO archive of the filesystem is required to be passed as the initial ramdisk:
 
 ```console
-cd fs0 && find -depth -print | tac | bsdcpio -o --format newc > ../fs0.cpio && cd ..
+cd rootfs && find -depth -print | tac | bsdcpio -o --format newc > ../rootfs.cpio && cd ..
 ```
 
 To use Firecraker, you need to download a [Firecracker release](https://github.com/firecracker-microvm/firecracker/releases).
@@ -508,7 +553,7 @@ Pass this file to the `firecracker-x86_64` command to run the Unikernel instance
 
 ```console
 rm /tmp/firecracker.socket
-firecracker-x86_64 --api-sock /tmp/firecracker.socket --config-file sqlite-fc-x86_64-initrd.json
+firecracker-x86_64 --api-sock /tmp/firecracker.socket --config-file scripts/run/fc-x86_64-initrd-sqlite.json
 ```
 
 Same as running with QEMU, the application will start:
