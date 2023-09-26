@@ -2,5 +2,5 @@
 /.config.old
 /build/
 /.unikraft/
-/fs0.cpio
+/rootfs.cpio
 /workdir/
