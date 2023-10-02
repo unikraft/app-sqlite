@@ -24,7 +24,7 @@ targets:
       - CONFIG_LIBVFSCORE_AUTOMOUNT_ROOTFS=y
       - CONFIG_LIBVFSCORE_ROOTFS_INITRD=y
       - CONFIG_LIBVFSCORE_ROOTFS="initrd"
-  - name: sqlite-qemu-aarch64-9pfs
+  - name: sqlite-qemu-arm64-9pfs
     architecture: arm64
     platform: qemu
     kconfig:
@@ -35,7 +35,7 @@ targets:
       - CONFIG_LIBVFSCORE_ROOTFS_9PFS=y
       - CONFIG_LIBVFSCORE_ROOTFS="9pfs"
       - CONFIG_LIBVFSCORE_ROOTDEV="fs0"
-  - name: sqlite-qemu-aarch64-initrd
+  - name: sqlite-qemu-arm64-initrd
     architecture: arm64
     platform: qemu
     kconfig:
@@ -55,7 +55,7 @@ targets:
       - CONFIG_LIBVFSCORE_AUTOMOUNT_ROOTFS=y
       - CONFIG_LIBVFSCORE_ROOTFS_INITRD=y
       - CONFIG_LIBVFSCORE_ROOTFS="initrd"
-  - name: sqlite-fc-aarch64-initrd
+  - name: sqlite-fc-arm64-initrd
     architecture: arm64
     platform: fc
     kconfig:
