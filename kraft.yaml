@@ -15,7 +15,7 @@ targets:
       - CONFIG_LIBVFSCORE_AUTOMOUNT_ROOTFS=y
       - CONFIG_LIBVFSCORE_ROOTFS_9PFS=y
       - CONFIG_LIBVFSCORE_ROOTFS="9pfs"
-      - CONFIG_LIBVFSCORE_ROOTDEV="fs0"
+      - CONFIG_LIBVFSCORE_ROOTDEV="fs1"
   - name: sqlite-qemu-x86_64-initrd
     architecture: x86_64
     platform: qemu
@@ -34,7 +34,7 @@ targets:
       - CONFIG_LIBVFSCORE_AUTOMOUNT_ROOTFS=y
       - CONFIG_LIBVFSCORE_ROOTFS_9PFS=y
       - CONFIG_LIBVFSCORE_ROOTFS="9pfs"
-      - CONFIG_LIBVFSCORE_ROOTDEV="fs0"
+      - CONFIG_LIBVFSCORE_ROOTDEV="fs1"
   - name: sqlite-qemu-arm64-initrd
     architecture: arm64
     platform: qemu
